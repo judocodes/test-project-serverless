@@ -1,0 +1,84 @@
+UserPool:
+  Type: AWS::Cognito::UserPool
+  Properties:
+    AccountRecoverySetting:
+      RecoveryMechanisms:
+        - Name: verified_email
+          Priority: 1
+
+    AutoVerifiedAttributes:
+      - email
+
+    DeviceConfiguration:
+      ChallengeRequiredOnNewDevice: true
+      DeviceOnlyRememberedOnUserPrompt: true
+
+    EmailConfiguration:
+      EmailSendingAccount: COGNITO_DEFAULT # Switch to DEVELOPER in the future
+      # ConfigurationSet: ... add rules for your SES.. Need to look this up.
+      # From: FROM_EMAIL_ADDREESS
+      # SourceArn: YOUR_SES_EMAIL_ARN
+      # ReplyToEmailAddress:    # Maybe use some mail to check for user login problems.
+    # EmailVerificationMessage: Thank your signing up. Please verify your E-Mail.
+    # EmailVerificationSubject: Verify your E-Mail.
+
+    # LambdaConfig:
+    #   PreSignUp: !GetAtt ValidateSignUpLambdaFunction.Arn
+
+    UsernameAttributes:
+      - email
+    UsernameConfiguration:
+      CaseSensitive: false
+    UserPoolName: Teaching_Web-${self:provider.region}
+    # VerificationMessageTemplate:
+    #   VerificationMessageTemplate
+
+    Policies:
+      PasswordPolicy:
+        MinimumLength: 6
+        RequireLowercase: false
+        RequireNumbers: false
+        RequireSymbols: false
+        RequireUppercase: false
+        TemporaryPasswordValidityDays: 3
+
+###########
+
+UserPoolClient:
+  Type: AWS::Cognito::UserPoolClient
+  Properties:
+    AllowedOAuthFlows:
+      - implicit
+    AllowedOAuthScopes:
+      - phone
+      - email
+      - openid
+      - profile
+    UserPoolId: !Ref CognitoUserPoolTeachingWebUserPool
+    ClientName: 'Teaching_Web_Auth'
+    GenerateSecret: false
+    CallbackURLs:
+      - https://www.localhost:8000
+    DefaultRedirectURI: https://www.localhost:8000
+    LogoutURLs:
+      - https://www.localhost:8000/logout
+
+############
+
+TeachersUserPoolGroup:
+  Type: AWS::Cognito::UserPoolGroup
+  Properties:
+    Description: These are the teachers for the website.
+    GroupName: Teachers
+    Precedence: 0
+    UserPoolId: !Ref CognitoUserPoolTeachingWebUserPool
+
+##############
+
+StudentsUserPoolGroup:
+  Type: AWS::Cognito::UserPoolGroup
+  Properties:
+    Description: These are the students one the website.
+    GroupName: Students
+    Precedence: 0
+    UserPoolId: !Ref CognitoUserPoolTeachingWebUserPool
